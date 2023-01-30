@@ -2,9 +2,20 @@ import { createFiber } from "./ReactFiber";
 import { isArray, isStringOrNumber, updateNode } from "./utils";
 
 
-export function updateFunctionComponent() { }
+export function updateFunctionComponent(workInProgress) {
+    const { type, props } = workInProgress;
+    const children = type(props);
+    // console.log('func', '---->', children)
+    reconcileChildren(workInProgress, children);
+}
 
-export function updateClassComponent() { }
+export function updateClassComponent(workInProgress) {
+    const { type, props } = workInProgress;
+    const instance = new type(props);
+    const children = instance.render();
+    // console.log('class', '---->', children)
+    reconcileChildren(workInProgress, children);
+}
 
 export function updateHostComponent(workInProgress) {
     if (!workInProgress.stateNode) {
@@ -15,9 +26,13 @@ export function updateHostComponent(workInProgress) {
     reconcileChildren(workInProgress, workInProgress.props.children);
 }
 
-export function updateHostText() { }
+export function updateHostText(workInProgress) {
+    workInProgress.stateNode = document.createTextNode(workInProgress.props.children);
+}
 
-export function updateFragmentComponent() { }
+export function updateFragmentComponent(workInProgress) {
+    reconcileChildren(workInProgress, workInProgress.props.children);
+}
 
 function reconcileChildren(workInProgress, children) {
     if (isStringOrNumber(children)) {

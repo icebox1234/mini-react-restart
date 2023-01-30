@@ -73,11 +73,11 @@ function workLoop(IdelDeadline) {
         commitRoot();
     }
 }
-window.requestIdleCallback(workLoop);
 
 
 function commitRoot() {
     commitWorker(workInProgressRoot);
+    console.log(workInProgressRoot)
     workInProgressRoot = null;
 }
 
@@ -86,10 +86,24 @@ function commitWorker(workInProgress) {
         return;
     }
     const { flags, stateNode } = workInProgress;
-    const parentNode = workInProgress.return.stateNode;
+    const parentNode = getParentNode(workInProgress);
     if (flags & Placement && stateNode) {
         parentNode.appendChild(stateNode);
     }
     commitWorker(workInProgress.child);
     commitWorker(workInProgress.sibling);
 }
+
+function getParentNode(workInProgress) {
+    let current = workInProgress;
+    while (current) {
+        const { return: parent } = current;
+        if (parent.stateNode) {
+            return parent.stateNode;
+        }
+        current = current.return;
+    }
+}
+
+
+window.requestIdleCallback(workLoop);

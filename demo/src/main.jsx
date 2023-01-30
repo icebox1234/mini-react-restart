@@ -25,23 +25,27 @@ class ClassComponent extends Component {
 
 function FragmentComponent() {
     return (
-        <ul>
-            <>
-                <li>part1</li>
-                <li>part2</li>
-            </>
-        </ul>
+        // <ul>
+        //     <>
+        //         <li>part1</li>
+        //         <li>part2</li>
+        //     </>
+        // </ul>
+        <>
+            <div>1</div>
+            <div>2</div>
+        </>
     );
 }
 
 const jsx = (
-  <div className="border">
-    <h1>react</h1>
-    <a href="https://github.com/bubucuo/mini-react">mini react</a>
-    {/* <FunctionComponent name="函数组件" />
-    <ClassComponent name="类组件" />
-    <FragmentComponent /> */}
-  </div>
+    <div className="border">
+        <h1>react</h1>
+        <a href="https://github.com/bubucuo/mini-react">mini react</a>
+        <FunctionComponent name="函数组件" />
+        <ClassComponent name="类组件" />
+        <FragmentComponent />
+    </div>
 );
 // function App() {
 //     return (
