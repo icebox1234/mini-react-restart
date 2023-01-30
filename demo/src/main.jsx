@@ -34,28 +34,28 @@ function FragmentComponent() {
     );
 }
 
-// const jsx = (
-//   <div className="border">
-//     <h1>react</h1>
-//     <a href="https://github.com/bubucuo/mini-react">mini react</a>
-//     <FunctionComponent name="函数组件" />
-//     <ClassComponent name="类组件" />
-//     <FragmentComponent />
-//   </div>
-// );
-function App() {
-    return (
-        <div className="border">
-            <h1>react</h1>
-            <a href="https://github.com/bubucuo/mini-react">mini react</a>
-            <FunctionComponent name="函数组件" />
-            <ClassComponent name="类组件" />
-            <FragmentComponent />
-        </div>
-    );
-}
+const jsx = (
+  <div className="border">
+    <h1>react</h1>
+    <a href="https://github.com/bubucuo/mini-react">mini react</a>
+    {/* <FunctionComponent name="函数组件" />
+    <ClassComponent name="类组件" />
+    <FragmentComponent /> */}
+  </div>
+);
+// function App() {
+//     return (
+//         <div className="border">
+//             <h1>react</h1>
+//             <a href="https://github.com/bubucuo/mini-react">mini react</a>
+//             {/* <FunctionComponent name="函数组件" />
+//             <ClassComponent name="类组件" />
+//             <FragmentComponent /> */}
+//         </div>
+//     );
+// }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(jsx);
 
 // 实现了常见组件初次渲染
 
