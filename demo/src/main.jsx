@@ -1,13 +1,29 @@
 // import React from "react";
 // import ReactDOM from "react-dom";
-import { ReactDOM, Component } from '../which-react';
+import { ReactDOM, Component, useReducer } from '../which-react';
 
 import './index.css';
 
+function reducer(state, action) {
+    const { type, payload = 1 } = action;
+    switch (type) {
+        case 'ADD':
+            return state + payload;
+    }
+}
+
 function FunctionComponent(props) {
+    const [count, setCount] = useReducer(reducer, 0);
     return (
         <div className="border">
             <p>{props.name}</p>
+            <p
+                onClick={() => {
+                    setCount({ type: 'ADD', payload: 2 });
+                }}
+            >
+                count is: {count}
+            </p>
         </div>
     );
 }

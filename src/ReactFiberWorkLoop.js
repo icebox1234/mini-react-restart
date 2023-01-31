@@ -13,6 +13,7 @@ import {
     HostComponent,
     HostText
 } from "./ReactWorkTags";
+import { schedullCallback } from './Scheduler';
 
 let workInProgress = null;
 let workInProgressRoot = null;
@@ -58,14 +59,15 @@ function performUnitOfWork() {
 export function scheduleUpdateOnFiber(fiber) {
     workInProgress = fiber;
     workInProgressRoot = fiber;
+    schedullCallback(workLoop);
 }
 
 /**
  * 
  * @param {IdleDeadline} IdelDeadline 
  */
-function workLoop(IdelDeadline) {
-    while (workInProgress && IdelDeadline.timeRemaining() > 0) {
+function workLoop(/* IdelDeadline */) {
+    while (workInProgress /* && IdelDeadline.timeRemaining() > 0 */) {
         performUnitOfWork();
     }
     // console.log(workInProgressRoot)
@@ -106,4 +108,4 @@ function getParentNode(workInProgress) {
 }
 
 
-window.requestIdleCallback(workLoop);
+// window.requestIdleCallback(workLoop);
