@@ -1,5 +1,6 @@
 import { isStringOrNumber, isArray } from './utils';
 import { createFiber } from './ReactFiber';
+import { Update, ChildDeletion } from './ReactFiberFlags';
 
 function deleteChild(returnFiber, childFiber) {
     returnFiber.flags |= ChildDeletion;
