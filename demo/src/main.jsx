@@ -33,6 +33,26 @@ function FunctionComponent(props) {
                 state is: {state}
             </p>
             <p>{count % 2 ? <div>omg</div> : <span>123</span>}</p>
+            {state % 2
+                ? [0, 1, 3, 4].map((item) => {
+                      return <span key={item}>{item}</span>;
+                  })
+                : [0, 1, 2, 3, 4].map((item) => {
+                      return <span key={item}>{item}</span>;
+                  })}
+        </div>
+    );
+}
+
+function Maptest() {
+    return (
+        <div>
+            {[1, 2, 3, 4].map((item) => {
+                return <span key={item}>{item}</span>;
+            })}
+            {[1, 2, 3, 4].map((item) => {
+                return <span key={item}>{item}</span>;
+            })}
         </div>
     );
 }
@@ -70,6 +90,7 @@ const jsx = (
         <FunctionComponent name="函数组件" />
         <ClassComponent name="类组件" />
         <FragmentComponent />
+        <Maptest />
     </div>
 );
 // function App() {
