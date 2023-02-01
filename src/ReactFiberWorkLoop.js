@@ -1,4 +1,4 @@
-import { Placement } from "./ReactFiberFlags";
+import { ChildDeletion, Placement, Update } from "./ReactFiberFlags";
 import {
     updateClassComponent,
     updateFragmentComponent,
@@ -14,6 +14,7 @@ import {
     HostText
 } from "./ReactWorkTags";
 import { schedullCallback } from './Scheduler';
+import { updateNode } from "./utils";
 
 let workInProgress = null;
 let workInProgressRoot = null;
@@ -70,7 +71,6 @@ function workLoop(/* IdelDeadline */) {
     while (workInProgress /* && IdelDeadline.timeRemaining() > 0 */) {
         performUnitOfWork();
     }
-    // console.log(workInProgressRoot)
     if (!workInProgress && workInProgressRoot) {
         commitRoot();
     }
@@ -87,16 +87,26 @@ function commitWorker(workInProgress) {
     if (!workInProgress) {
         return;
     }
-    const { flags, stateNode } = workInProgress;
-    const parentNode = getParentNode(workInProgress);
-    if (flags & Placement && stateNode) {
-        parentNode.appendChild(stateNode);
+    const { stateNode } = workInProgress;
+    const parentStateNode = getParentStateNode(workInProgress);
+    if (workInProgress.flags & Placement && stateNode) {
+        parentStateNode.appendChild(stateNode);
+        // workInProgress.flags &= ~Placement;
+    }
+    if (workInProgress.flags & Update && stateNode) {
+        updateNode(stateNode, workInProgress/* .alternate.props, workInProgress.props */);
+        // workInProgress.flags &= ~Update;
+
+    }
+    if (workInProgress.flags & ChildDeletion) {
+        commitDeletion(workInProgress.deletions, stateNode || parentStateNode);
+        // workInProgress.flags &= ~ChildDeletion;
     }
     commitWorker(workInProgress.child);
     commitWorker(workInProgress.sibling);
 }
 
-function getParentNode(workInProgress) {
+function getParentStateNode(workInProgress) {
     let current = workInProgress;
     while (current) {
         const { return: parent } = current;
@@ -105,6 +115,19 @@ function getParentNode(workInProgress) {
         }
         current = current.return;
     }
+}
+
+function commitDeletion(deletions, parentStateNode) {
+    for (let i = 0; i < deletions.length; ++i) {
+        parentStateNode.removeChild(getStateNode(deletions[i]));
+    }
+}
+
+function getStateNode(fiber) {
+    while (!fiber.stateNode) {
+        fiber = fiber.child;
+    }
+    return fiber.stateNode;
 }
 
 

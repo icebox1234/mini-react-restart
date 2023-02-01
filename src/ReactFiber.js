@@ -12,7 +12,9 @@ export function createFiber(vnode, returnFiber) {
         sibling: null,
         return: returnFiber,
         flags: Placement,
-        index: 0
+        index: 0,
+        alternate: null,
+        memorizedState: null
     };
     const { type } = vnode;
     if (isStr(type)) {

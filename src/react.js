@@ -1,3 +1,4 @@
 import { Component } from './ReactComponent';
+import { useReducer, useState } from './ReactFiberHooks';
 
-export { Component }; 
+export { Component, useReducer, useState }; 
