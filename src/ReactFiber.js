@@ -12,7 +12,7 @@ export function createFiber(vnode, returnFiber) {
         sibling: null,
         return: returnFiber,
         flags: Placement,
-        index: 0,
+        index: null,
         alternate: null,
         memorizedState: null
     };

@@ -13,7 +13,7 @@ import {
     HostComponent,
     HostText
 } from "./ReactWorkTags";
-import { schedullCallback } from './Scheduler';
+import { scheduleCallback } from './Scheduler';
 import { updateNode } from "./utils";
 
 let workInProgress = null;
@@ -60,7 +60,7 @@ function performUnitOfWork() {
 export function scheduleUpdateOnFiber(fiber) {
     workInProgress = fiber;
     workInProgressRoot = fiber;
-    schedullCallback(workLoop);
+    scheduleCallback(workLoop);
 }
 
 /**
@@ -90,18 +90,22 @@ function commitWorker(workInProgress) {
     const { stateNode } = workInProgress;
     const parentStateNode = getParentStateNode(workInProgress);
     if (workInProgress.flags & Placement && stateNode) {
-        parentStateNode.appendChild(stateNode);
-        // workInProgress.flags &= ~Placement;
+        // parentStateNode.appendChild(stateNode);
+        const before = getHostSibling(workInProgress);
+        insertOrAppendPlacementNode(workInProgress, before, parentStateNode);
     }
     if (workInProgress.flags & Update && stateNode) {
-        updateNode(stateNode, workInProgress/* .alternate.props, workInProgress.props */);
-        // workInProgress.flags &= ~Update;
+        updateNode(stateNode, workInProgress);
 
     }
     if (workInProgress.flags & ChildDeletion) {
         commitDeletion(workInProgress.deletions, stateNode || parentStateNode);
-        // workInProgress.flags &= ~ChildDeletion;
     }
+
+    if (workInProgress.tag === FunctionComponent) {
+        invokeHooks(workInProgress);
+    }
+
     commitWorker(workInProgress.child);
     commitWorker(workInProgress.sibling);
 }
@@ -128,6 +132,42 @@ function getStateNode(fiber) {
         fiber = fiber.child;
     }
     return fiber.stateNode;
+}
+
+function getHostSibling(fiber) {
+    let node = fiber.sibling;
+    while (node) {
+        if (node.stateNode && !(node.flags & Placement)) {
+            return node.stateNode;
+        }
+        node = node.sibling;
+    }
+    return null;
+}
+
+function insertOrAppendPlacementNode(node, before, parent) {
+    if (before) {
+        parent.insertBefore(node.stateNode, before);
+    } else {
+        parent.appendChild(node.stateNode);
+    }
+}
+
+function invokeHooks(workInProgress) {
+    const { updateQueueOfEffect, updateQueueOfLayout } = workInProgress;
+
+    for (let i = 0; i < updateQueueOfLayout.length; i++) {
+        const effect = updateQueueOfLayout[i];
+        effect.create();
+    }
+
+    for (let i = 0; i < updateQueueOfEffect.length; i++) {
+        const effect = updateQueueOfEffect[i];
+
+        scheduleCallback(() => {
+            effect.create();
+        });
+    }
 }
 
 

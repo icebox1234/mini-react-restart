@@ -2,7 +2,7 @@
 // import ReactDOM from "react-dom";
 
 // import { useReducer, useState } from 'react';
-import { useReducer, useState } from "../src/react";
+import { useReducer, useState, useEffect, useLayoutEffect } from "../src/react";
 // import { Component } from 'react';
 import { Component } from '../src/react';
 // import ReactDOM from 'react-dom/client';
@@ -12,5 +12,7 @@ export {
   ReactDOM,
   Component,
   useReducer,
-  useState
+  useState,
+  useEffect,
+  useLayoutEffect
 };

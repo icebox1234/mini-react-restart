@@ -6,7 +6,7 @@ let taskQueue = [];
 let timerQueue = [];
 let taskIdCounter = 1;
 
-function schedullCallback(callback) {
+function scheduleCallback(callback) {
     const currentTime = getCurrentTime();
     let timeout = -1;
     const expirationTime = currentTime + timeout;
@@ -61,6 +61,6 @@ function getCurrentTime() {
 }
 
 
-export { schedullCallback };
+export { scheduleCallback };
 
 

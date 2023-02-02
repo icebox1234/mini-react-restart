@@ -1,1 +1,1 @@
-export { schedullCallback } from './Scheduler';
+export { scheduleCallback } from './Scheduler';

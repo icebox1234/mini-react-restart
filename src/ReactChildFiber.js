@@ -1,23 +1,89 @@
 import { isStringOrNumber, isArray } from './utils';
 import { createFiber } from './ReactFiber';
-import { Update, ChildDeletion } from './ReactFiberFlags';
+import { Update, ChildDeletion, Placement } from './ReactFiberFlags';
 // import { Fragment } from './ReactWorkTags';
 import { REACT_FRAGMENT_TYPE } from './ReactSymbols';
 
-function reconcileChildren(workInProgress, children) {
+function reconcileChildren(returnFiber, children) {
     if (isStringOrNumber(children)) {
         return;
     }
     let previousNewFiber = null;
     let newIdx = 0;
     let lastPlacedIndex = 0;
-    let shouldTrackSideEffects = !!workInProgress.alternate;
+    let nextOldFiber = null;
+    let shouldTrackSideEffects = !!returnFiber.alternate;
 
     const newChildren = isArray(children) ? children : [children];
-    const currentFirstChild = workInProgress.alternate?.child;
+    const currentFirstChild = returnFiber.alternate?.child;
     let oldFiber = currentFirstChild;
+
+    /**
+     * 第一个循环  从头向尾遍历，寻找可复用的fiber节点（比较新旧节点），一旦出现不可复用，就停止
+     * old [0 1] 2 3 4
+     * new [0 1] 3 4
+     */
+    for (; oldFiber && newIdx < newChildren.length; newIdx++) {
+        let newChild = newChildren[newIdx];
+        if (newChild === null) {
+            continue;
+        }
+
+        if (oldFiber.index > newIdx) {
+            nextOldFiber = oldFiber;
+            oldFiber = null;
+        } else {
+            nextOldFiber = oldFiber.sibling;
+        }
+
+        if (isArray(newChild)) {
+            newChild = { props: { children: newChild }, type: REACT_FRAGMENT_TYPE };
+        }
+
+
+        const same = sameNode(newChild, oldFiber);
+        if (!same) {
+            if (!oldFiber) {
+                oldFiber = nextOldFiber;
+            }
+            break;
+        }
+        const newFiber = createFiber(newChild, returnFiber);
+        // 相当于useFiber
+        Object.assign(newFiber, {
+            stateNode: oldFiber.stateNode,
+            flags: Update,
+            alternate: oldFiber
+        });
+
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx, shouldTrackSideEffects);
+
+        if (previousNewFiber === null) {
+            returnFiber.child = newFiber;
+        } else {
+            previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+        oldFiber = nextOldFiber;
+    }
+
+    /**
+     * 第二个循环，会出现两种情况
+     * 1.新节点没有了，老节点还在
+     * old [0 1] 2 3 4
+     * new [0 1]
+     * 2.新节点还在，老节点没有了
+     * old [0 1] 
+     * new [0 1] 2 3 4
+     */
+    if (newIdx === newChildren.length) {
+        deleteRemainingChildren(returnFiber, oldFiber);
+    }
+    /**
+     *  第二种情况，同样适用于初次渲染
+     */
     if (!oldFiber) {
-        for (newIdx = 0; newIdx < newChildren.length; newIdx++) {
+        for (/* newIdx = 0 */; newIdx < newChildren.length; newIdx++) {
             let newChild = newChildren[newIdx];
             if (newChild === null) {
                 continue;
@@ -38,10 +104,10 @@ function reconcileChildren(workInProgress, children) {
             if (isArray(newChild)) {
                 newChild = { props: { children: newChild }, type: REACT_FRAGMENT_TYPE };
             }
-            const newFiber = createFiber(newChild, workInProgress);
+            const newFiber = createFiber(newChild, returnFiber);
             lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx, shouldTrackSideEffects);
             if (previousNewFiber === null) {
-                workInProgress.child = newFiber;
+                returnFiber.child = newFiber;
             } else {
                 previousNewFiber.sibling = newFiber;
             }
@@ -49,8 +115,49 @@ function reconcileChildren(workInProgress, children) {
         }
     }
 
-    if (newIdx === newChildren.length) {
-        deleteRemainingChildren(workInProgress, oldFiber);
+    /**
+     * 第三个循环，新老节点都存在剩余
+     * old 0 1 [2 3 4]
+     * new 0 1 [3 4]
+     * React中构建old的hashMap
+     * Vue中构建的是new的hashMap
+     */
+    const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+
+    for (; newIdx < newChildren.length; newIdx++) {
+        let newChild = newChildren[newIdx];
+        if (newChild === null) {
+            continue;
+        }
+
+        if (isArray(newChild)) {
+            newChild = { props: { children: newChild }, type: REACT_FRAGMENT_TYPE };
+        }
+
+        const newFiber = createFiber(newChild, returnFiber);
+
+        const matchedFiber = existingChildren.get(newFiber.key || newFiber.index);
+        if (matchedFiber) {
+            Object.assign(newFiber, {
+                stateNode: matchedFiber.stateNode,
+                flags: Update,
+                alternate: matchedFiber
+            });
+            existingChildren.delete(newFiber.key || newFiber.index)
+        }
+
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx, shouldTrackSideEffects);
+        if (previousNewFiber === null) {
+            returnFiber.child = newFiber;
+        } else {
+            previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+    }
+    if (shouldTrackSideEffects) {
+        existingChildren.forEach(child => {
+            deleteChild(returnFiber, child);
+        });
     }
 }
 
@@ -59,10 +166,37 @@ function sameNode(a, b) {
 }
 
 function placeChild(newFiber, lastPlacedIndex, newIdx, shouldTrackSideEffects) {
+    // newFiber 是 workInProgress 的子fiber节点
     newFiber.index = newIdx;
     if (!shouldTrackSideEffects) {
         return lastPlacedIndex;
     }
+
+    const current = newFiber.alternate;
+    if (current) {
+        const oldIdx = current.index;
+        if (oldIdx < lastPlacedIndex) {
+            newFiber.flags |= Placement;
+            return lastPlacedIndex;
+        } else {
+            return oldIdx;
+        }
+    } else {
+        newFiber.flags |= Placement;
+        return lastPlacedIndex;
+    }
+
+}
+
+function mapRemainingChildren(returnFiber, currentFirstChild) {
+    const existingChildren = new Map();
+    let existingChild = currentFirstChild;
+    while (existingChild) {
+        // value 是 key或者index对应的fiber，在Vue中是对应的index，因为Vue中是数组结构
+        existingChildren.set(existingChild.key || existingChild.index, existingChild);
+        existingChild = existingChild.sibling;
+    }
+    return existingChildren;
 }
 
 function deleteRemainingChildren(returnFiber, currentFirstChild) {

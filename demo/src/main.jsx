@@ -1,6 +1,13 @@
 // import React from "react";
 // import ReactDOM from "react-dom";
-import { ReactDOM, Component, useReducer, useState } from '../which-react';
+import {
+    ReactDOM,
+    Component,
+    useReducer,
+    useState,
+    useEffect,
+    useLayoutEffect,
+} from '../which-react';
 
 import './index.css';
 
@@ -15,6 +22,18 @@ function reducer(state, action) {
 function FunctionComponent(props) {
     const [count, setCount] = useReducer(reducer, 0);
     const [state, setState] = useState(10);
+
+
+    useEffect(() => {
+        console.log('effect');
+    }, [state]);
+    
+    useLayoutEffect(() => {
+        console.log('layout effect');
+    }, [state]);
+
+    
+
     return (
         <div className="border">
             <p>{props.name}</p>
@@ -33,13 +52,15 @@ function FunctionComponent(props) {
                 state is: {state}
             </p>
             <p>{count % 2 ? <div>omg</div> : <span>123</span>}</p>
-            {state % 2
-                ? [0, 1, 3, 4].map((item) => {
-                      return <span key={item}>{item}</span>;
-                  })
-                : [0, 1, 2, 3, 4].map((item) => {
-                      return <span key={item}>{item}</span>;
-                  })}
+            <ul>
+                {state % 2
+                    ? [2, 1, 3, 4].map((item) => {
+                          return <li key={item}>{item}</li>;
+                      })
+                    : [0, 1, 2, 3, 4].map((item) => {
+                          return <li key={item}>{item}</li>;
+                      })}
+            </ul>
         </div>
     );
 }
